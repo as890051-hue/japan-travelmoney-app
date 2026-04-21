@@ -88,9 +88,37 @@ html, body { height: 100%; background: var(--paper); font-family: 'Noto Sans TC'
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ─── FAB ─── */
-.fab { position: absolute; bottom: 28px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--ink); color: var(--paper); border: none; font-size: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-lg); transition: transform 0.2s; z-index: 50; }
+.fab { position: fixed; bottom: calc(28px + env(safe-area-inset-bottom)); right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--ink); color: var(--paper); border: none; font-size: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-lg); transition: transform 0.2s; z-index: 50; }
 .fab:hover { transform: scale(1.06); }
 .fab:active { transform: scale(0.96); }
+/* ─── PHOTO BUTTONS ─── */
+.photo-row { display: flex; gap: 8px; }
+.photo-btn-cam { flex: 1; padding: 11px 6px; border: 1.5px solid var(--sakura); border-radius: var(--r); background: #fdf5f6; color: var(--sakura2); font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; transition: all 0.2s; font-family: "Noto Sans TC"; }
+.photo-btn-gallery { flex: 1; padding: 11px 6px; border: 1.5px dashed var(--paper3); border-radius: var(--r); background: var(--paper); color: #888; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; transition: all 0.2s; font-family: "Noto Sans TC"; }
+.photo-btn-gallery:hover { border-color: var(--teal); color: var(--teal); }
+/* ─── BATCH IMPORT ─── */
+.batch-card { background: white; border-radius: var(--r-lg); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); border: 1px solid var(--paper2); }
+.batch-card h3 { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+.batch-drop { border: 2px dashed var(--paper3); border-radius: var(--r); padding: 22px 16px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.batch-drop:hover { border-color: var(--teal); background: #f0f8f8; }
+.batch-drop .bd-icon { font-size: 30px; margin-bottom: 8px; }
+.batch-drop p { font-size: 13px; color: #888; }
+.batch-drop small { font-size: 11px; color: #bbb; }
+.batch-preview { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 10px; }
+.b-thumb { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: var(--paper2); }
+.b-thumb img { width:100%;height:100%;object-fit:cover; }
+.b-thumb .bt-info { position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.5);color:white;font-size:9px;padding:3px 4px;text-align:center;line-height:1.3; }
+.b-thumb .bt-badge { position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center; }
+.bt-ok{background:#4caf7d;color:white} .bt-err{background:#e57373;color:white} .bt-spin{background:rgba(0,0,0,0.4);color:white;animation:pulse 0.8s infinite}
+.batch-items { margin-top: 12px; }
+.b-item { display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--paper);border-radius:var(--r);margin-bottom:6px;border:1px solid var(--paper3); }
+.b-item-check { width:18px;height:18px;cursor:pointer;flex-shrink:0; }
+.b-item-body { flex:1;min-width:0; }
+.b-item-name { font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.b-item-meta { font-size:11px;color:#888;margin-top:1px; }
+.b-item-edit { font-size:11px;color:var(--teal);cursor:pointer;flex-shrink:0; }
+.batch-footer { display:flex;gap:8px;margin-top:10px; }
+.batch-footer button { flex:1;padding:11px;font-size:13px; }
 
 /* ─── EXPENSE LIST ─── */
 .date-section { margin-bottom: 20px; }
@@ -299,6 +327,7 @@ textarea { height: 65px; resize: none; }
     <button class="tab-btn" onclick="switchTab('friends')">同行</button>
     <button class="tab-btn" onclick="switchTab('stats')">統計</button>
     <button class="tab-btn" onclick="switchTab('sync')">同步</button>
+    <button class="tab-btn" onclick="switchTab('import')">批次</button>
   </div>
   <div class="tab-bar-line"></div>
 
@@ -421,6 +450,25 @@ textarea { height: 65px; resize: none; }
         </div>
       </div>
     </div>
+
+    <!-- 批次匯入 -->
+    <div class="tab-pane" id="pane-import">
+      <div class="batch-card">
+        <h3>📸 批次照片匯入</h3>
+        <div class="batch-drop" onclick="document.getElementById('batch-input').click()">
+          <div class="bd-icon">🖼️</div>
+          <p>點擊選擇多張收據照片</p>
+          <small>AI 將自動讀取每張照片的時間與消費資訊</small>
+        </div>
+        <input type="file" id="batch-input" accept="image/*" multiple style="display:none" onchange="handleBatchImport(event)"/>
+        <div class="batch-preview" id="batch-preview"></div>
+        <div class="batch-items" id="batch-items"></div>
+        <div class="batch-footer" id="batch-footer" style="display:none">
+          <button onclick="batchSelectAll()">全選</button>
+          <button class="btn-primary" onclick="batchSaveSelected()">匯入已選項目</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <button class="fab" onclick="openModal()" id="fab">＋</button>
@@ -435,10 +483,17 @@ textarea { height: 65px; resize: none; }
     <div class="modal-title" id="modal-title">新增費用</div>
     <div class="form-group">
       <label class="form-label">拍照辨識（AI 翻譯）</label>
-      <button class="photo-upload-btn" onclick="document.getElementById('file-input').click()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M8 5V4a1 1 0 011-1h6a1 1 0 011 1v1"/></svg>
-        選擇收據或商品圖片
-      </button>
+      <div class="photo-row">
+        <button class="photo-btn-cam" onclick="document.getElementById('cam-input').click()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="13" r="4"/><path d="M5 7h1l2-3h8l2 3h1a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"/></svg>
+          直接拍照
+        </button>
+        <button class="photo-btn-gallery" onclick="document.getElementById('file-input').click()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          從相簿選
+        </button>
+      </div>
+      <input type="file" id="cam-input" accept="image/*" capture="environment" onchange="handlePhoto(event)" style="display:none"/>
       <input type="file" id="file-input" accept="image/*" onchange="handlePhoto(event)"/>
       <div class="ai-box" id="ai-box">
         <div class="ai-box-label">AI 辨識結果</div>
@@ -484,14 +539,12 @@ textarea { height: 65px; resize: none; }
   </div>
 </div>
 
-<!-- Firebase & QR -->
+<!-- Firebase & QR (UMD - works without type=module) -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, set, get, push, onValue, off, remove, serverTimestamp, onDisconnect }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-
-// ── Firebase config (public demo project — read/write open) ──────────────────
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+// ── Firebase init ─────────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyCRNju_5T8VEvkANQS9fW4hcvDYzRMf0ec",
   authDomain: "japan-money.firebaseapp.com",
@@ -499,391 +552,276 @@ const firebaseConfig = {
   projectId: "japan-money",
   storageBucket: "japan-money.firebasestorage.app",
   messagingSenderId: "1096168812122",
-  appId: "1:1096168812122:web:5ff976c5cfb281ad8a7263",
-  measurementId: "G-N74J83WC48"
+  appId: "1:1096168812122:web:5ff976c5cfb281ad8a7263"
 };
-
-let app, db;
+let db;
 try {
-  app = initializeApp(firebaseConfig);
-  db = getDatabase(app);
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
 } catch(e) {
-  console.warn('Firebase init failed, using local mode:', e);
+  console.warn('Firebase init failed, local mode:', e);
+  db = null;
 }
 
-// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
 const AVATARS_BG = ['#B5D4F4','#9FE1CB','#F5C4B3','#F4C0D1','#CECBF6','#C0DD97','#FAC775','#F7C1C1'];
 const AVATARS_FG = ['#0C447C','#085041','#712B13','#72243E','#3C3489','#27500A','#633806','#791F1F'];
 const CAT_ICONS  = {'食':'🍜','衣':'👗','住':'🏨','行':'🚃','娛樂':'🎌','其他':'📦'};
 const CAT_COLORS = {'食':'#EF9F27','衣':'#D4537E','住':'#378ADD','行':'#1D9E75','娛樂':'#7F77DD','其他':'#888780'};
-
 const abg = i => AVATARS_BG[i % AVATARS_BG.length];
 const afg = i => AVATARS_FG[i % AVATARS_FG.length];
 const fi  = n => friends.indexOf(n);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let myName = '', roomCode = '', myId = '';
-let friends = [], expenses = [], members = {};
-let currentRate = null;
-let editingId = null, selectedCat = '食', selectedPayer = null;
-let fbListeners = [];
-let localMode = false;
+let myName='', roomCode='', myId='';
+let friends=[], expenses=[], members={};
+let currentRate=null;
+let editingId=null, selectedCat='食', selectedPayer=null;
+let localMode=false;
+let fbListeners=[];
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
-function genCode() { return Math.random().toString(36).substring(2,8).toUpperCase(); }
-function genId()   { return Date.now().toString(36) + Math.random().toString(36).substring(2,6); }
+function genCode(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).substring(2,6); }
+function roomPath(sub){ return 'rooms/'+roomCode+(sub?'/'+sub:''); }
 
-function showToast(msg, dur=2000) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), dur);
+function showToast(msg, dur=2400){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),dur);
+}
+function setSyncStatus(status,text){
+  const b=document.getElementById('sync-badge');
+  b.className='sync-badge '+status;
+  document.getElementById('sync-text').textContent=text;
 }
 
-function setSyncStatus(status, text) {
-  const b = document.getElementById('sync-badge');
-  b.className = 'sync-badge ' + status;
-  document.getElementById('sync-text').textContent = text;
-}
-
-// ── ONBOARDING ─────────────────────────────────────────────────────────────────
-window.createRoom = async function() {
-  myName = document.getElementById('my-name-input').value.trim() || '旅人';
-  myId   = genId();
-  roomCode = genCode();
-  await enterApp();
+// ── ONBOARDING ────────────────────────────────────────────────────────────────
+function createRoom(){
+  myName=document.getElementById('my-name-input').value.trim()||'旅人';
+  myId=genId(); roomCode=genCode();
+  enterApp(false);
   showToast('帳本已建立 🎉');
-};
-
-window.joinRoom = async function() {
-  myName = document.getElementById('my-name-input').value.trim() || '旅人';
-  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-  if (code.length < 4) { alert('請輸入正確邀請碼'); return; }
-  myId = genId();
-  roomCode = code;
-  await enterApp(true);
-};
-
-async function enterApp(joining=false) {
+}
+function joinRoom(){
+  myName=document.getElementById('my-name-input').value.trim()||'旅人';
+  const code=document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(code.length<4){alert('請輸入正確邀請碼');return;}
+  myId=genId(); roomCode=code;
+  enterApp(true);
+}
+function enterApp(joining){
   document.getElementById('onboard-screen').classList.add('hidden');
-  document.getElementById('main-app').style.display = 'flex';
-  document.getElementById('header-room-code').textContent = roomCode;
-  document.getElementById('sync-room-code').textContent = roomCode;
-
+  document.getElementById('main-app').style.display='flex';
+  document.getElementById('header-room-code').textContent=roomCode;
+  document.getElementById('sync-room-code').textContent=roomCode;
   generateQR();
   initSync(joining);
   fetchRate();
 }
 
 // ── FIREBASE SYNC ─────────────────────────────────────────────────────────────
-function roomPath(sub) { return `rooms/${roomCode}/${sub}`; }
-
-async function initSync(joining) {
-  if (!db) { localMode = true; setSyncStatus('offline','離線模式'); return; }
-
+function initSync(joining){
+  if(!db){ localMode=true; setSyncStatus('offline','離線模式'); renderExpenses(); return; }
   setSyncStatus('connecting','連線中');
+  const presRef = db.ref(roomPath('members/'+myId));
+  presRef.set({name:myName, online:true, joined:Date.now()});
+  presRef.onDisconnect().update({online:false});
 
-  try {
-    // Register presence
-    const presRef = ref(db, roomPath(`members/${myId}`));
-    await set(presRef, { name: myName, online: true, joined: Date.now() });
-    onDisconnect(presRef).update({ online: false });
-
-    // If creating fresh room, push empty structure
-    if (!joining) {
-      const snap = await get(ref(db, roomPath('meta')));
-      if (!snap.exists()) {
-        await set(ref(db, roomPath('meta')), { created: Date.now(), creator: myName });
-      }
-    } else {
-      // Load existing data snapshot
-      const snap = await get(ref(db, roomPath('')));
-      if (snap.exists()) {
-        const data = snap.val();
-        if (data.friends) friends = Object.values(data.friends);
-        if (data.expenses) {
-          expenses = Object.entries(data.expenses).map(([k,v])=>({...v, _fbKey:k}));
-          expenses.sort((a,b)=>a.ts-b.ts);
+  if(!joining){
+    db.ref(roomPath('meta')).once('value').then(snap=>{
+      if(!snap.exists()) db.ref(roomPath('meta')).set({created:Date.now(),creator:myName});
+    });
+  } else {
+    db.ref(roomPath('')).once('value').then(snap=>{
+      if(snap.exists()){
+        const data=snap.val();
+        if(data.friends) friends=Object.values(data.friends);
+        if(data.expenses){
+          expenses=Object.entries(data.expenses).map(([k,v])=>({...v,_fbKey:k}));
+          expenses.sort((a,b)=>(a.ts||0)-(b.ts||0));
         }
-        if (data.members) members = data.members;
+        if(data.members) members=data.members;
         renderFriends(); renderExpenses(); renderMembers();
       }
-    }
-
-    setSyncStatus('online','已同步');
-    attachListeners();
-  } catch(e) {
-    console.error('Sync error:', e);
-    localMode = true;
-    setSyncStatus('offline','離線模式');
+    });
   }
+  setSyncStatus('online','已連線');
+  attachListeners();
 }
 
-function attachListeners() {
-  if (!db) return;
-
-  // Expenses listener
-  const expRef = ref(db, roomPath('expenses'));
-  const expUnsub = onValue(expRef, snap => {
-    if (!snap.exists()) { expenses = []; renderExpenses(); return; }
-    const prev = expenses.map(e=>e._fbKey);
-    const newExps = Object.entries(snap.val()).map(([k,v])=>({...v,_fbKey:k}));
-    newExps.sort((a,b)=>(a.ts||0)-(b.ts||0));
-    // Detect newly added items (not from self)
-    newExps.forEach(e => {
-      if (!prev.includes(e._fbKey) && e.addedBy !== myId) {
-        setTimeout(()=>{
-          const el = document.getElementById('exp-'+e._fbKey);
-          if (el) el.classList.add('new-flash');
-        }, 100);
-        showToast(`${e.addedBy_name||'成員'} 新增了「${e.name}」`);
+function attachListeners(){
+  if(!db) return;
+  detachListeners();
+  const expRef=db.ref(roomPath('expenses'));
+  const expCb=expRef.on('value', snap=>{
+    const prev=expenses.map(e=>e._fbKey);
+    expenses = snap.exists() ? Object.entries(snap.val()).map(([k,v])=>({...v,_fbKey:k})).sort((a,b)=>(a.ts||0)-(b.ts||0)) : [];
+    expenses.forEach(e=>{
+      if(!prev.includes(e._fbKey)&&e.addedBy!==myId){
+        setTimeout(()=>{const el=document.getElementById('exp-'+e._fbKey);if(el)el.classList.add('new-flash');},100);
+        showToast((e.addedBy_name||'成員')+' 新增了「'+e.name+'」');
       }
     });
-    expenses = newExps;
     renderExpenses();
   });
 
-  // Friends listener
-  const friendsRef = ref(db, roomPath('friends'));
-  const friendsUnsub = onValue(friendsRef, snap => {
-    friends = snap.exists() ? Object.values(snap.val()) : [];
-    renderFriends();
-  });
+  const friendsRef=db.ref(roomPath('friends'));
+  friendsRef.on('value', snap=>{ friends=snap.exists()?Object.values(snap.val()):[];renderFriends(); });
 
-  // Members listener
-  const membersRef = ref(db, roomPath('members'));
-  const membersUnsub = onValue(membersRef, snap => {
-    members = snap.exists() ? snap.val() : {};
+  const membersRef=db.ref(roomPath('members'));
+  membersRef.on('value', snap=>{
+    members=snap.exists()?snap.val():{};
     renderMembers();
-    const online = Object.values(members).filter(m=>m.online).length;
-    setSyncStatus('online', `${online}人在線`);
+    const online=Object.values(members).filter(m=>m.online).length;
+    setSyncStatus('online', online+'人在線');
   });
 
-  fbListeners = [
-    ()=>off(expRef, 'value', expUnsub),
-    ()=>off(friendsRef, 'value', friendsUnsub),
-    ()=>off(membersRef, 'value', membersUnsub),
+  fbListeners=[
+    ()=>expRef.off('value',expCb),
+    ()=>friendsRef.off(),
+    ()=>membersRef.off()
   ];
 }
+function detachListeners(){ fbListeners.forEach(f=>f()); fbListeners=[]; }
 
-function detachListeners() { fbListeners.forEach(f=>f()); fbListeners=[]; }
-
-window.leaveRoom = async function() {
-  if (!confirm('確定離開此帳本？')) return;
+function leaveRoom(){
+  if(!confirm('確定離開此帳本？')) return;
   detachListeners();
-  if (db) {
-    try { await set(ref(db, roomPath(`members/${myId}/online`)), false); } catch{}
-  }
-  roomCode = ''; friends = []; expenses = []; members = {};
-  document.getElementById('main-app').style.display = 'none';
+  if(db) db.ref(roomPath('members/'+myId+'/online')).set(false);
+  roomCode=''; friends=[]; expenses=[]; members=[];
+  document.getElementById('main-app').style.display='none';
   document.getElementById('onboard-screen').classList.remove('hidden');
-};
-
-// ── QR CODE ───────────────────────────────────────────────────────────────────
-function generateQR() {
-  const canvas = document.getElementById('qr-canvas');
-  const text = `ROOM:${roomCode}`;
-  try {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0,0,180,180);
-    // Simple manual QR placeholder — use qrcodejs if available
-    if (typeof QRCode !== 'undefined') {
-      const div = document.createElement('div');
-      new QRCode(div, { text, width:160, height:160, colorDark:'#1a1a2e', colorLight:'#faf8f3' });
-      setTimeout(()=>{
-        const img = div.querySelector('img');
-        if (img) { const i = new Image(); i.onload=()=>ctx.drawImage(i,10,10,160,160); i.src=img.src; }
-      }, 300);
-    } else {
-      // Fallback: draw code as text
-      ctx.fillStyle = '#faf8f3'; ctx.fillRect(0,0,180,180);
-      ctx.fillStyle = '#1a1a2e';
-      ctx.font = 'bold 18px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('邀請碼', 90, 75);
-      ctx.font = 'bold 32px monospace';
-      ctx.fillText(roomCode, 90, 115);
-      ctx.font = '11px sans-serif';
-      ctx.fillStyle = '#999';
-      ctx.fillText('輸入此碼加入帳本', 90, 145);
-    }
-  } catch(e) { console.warn('QR error', e); }
 }
 
-window.copyRoomCode = function() {
-  navigator.clipboard?.writeText(roomCode).catch(()=>{});
+// ── QR CODE ───────────────────────────────────────────────────────────────────
+function generateQR(){
+  const container=document.getElementById('qr-canvas');
+  container.innerHTML='';
+  try{
+    new QRCode(container,{text:'ROOM:'+roomCode,width:160,height:160,colorDark:'#1a1a2e',colorLight:'#faf8f3'});
+  }catch(e){
+    container.innerHTML='<div style="font-size:28px;font-weight:700;font-family:monospace;letter-spacing:4px;padding:30px 0;color:#3d8b8b">'+roomCode+'</div>';
+  }
+}
+function copyRoomCode(){
+  if(navigator.clipboard) navigator.clipboard.writeText(roomCode).catch(()=>{});
   showToast('邀請碼已複製 ✓');
-};
+}
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
-window.switchTab = function(tab) {
-  const tabs = ['expenses','rate','friends','stats','sync'];
-  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', tabs[i]===tab));
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+function switchTab(tab){
+  const tabs=['expenses','rate','friends','stats','sync','import'];
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById('pane-'+tab).classList.add('active');
-  if (tab==='stats') renderStats();
-  if (tab==='rate' && !currentRate) fetchRate();
-};
+  if(tab==='stats') renderStats();
+  if(tab==='rate'&&!currentRate) fetchRate();
+}
 
 // ── RATE ──────────────────────────────────────────────────────────────────────
-window.fetchRate = async function() {
-  const btn = document.getElementById('refresh-btn');
-  const dot = document.getElementById('rate-dot');
-  btn?.classList.add('spinning');
-  dot?.classList.add('loading');
-  document.getElementById('rate-chip-text').textContent = '查詢中...';
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:1000,
-        tools:[{type:'web_search_20250305',name:'web_search'}],
-        messages:[{role:'user',content:`請用web_search搜尋今天（${new Date().toISOString().split('T')[0]}）日圓對台幣（JPY/TWD）即時匯率，以及JPY對USD、CNY、KRW匯率。只回傳JSON，不加任何說明文字或markdown：{"jpy_twd":數字,"jpy_usd":數字,"jpy_cny":數字,"jpy_krw":數字,"change_twd":數字,"updated":"時間字串"}`}]
-      })
-    });
-    const data = await resp.json();
-    const text = data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'';
-    const clean = text.replace(/```json|```/g,'').trim();
+async function fetchRate(){
+  const btn=document.getElementById('refresh-btn'), dot=document.getElementById('rate-dot');
+  btn&&btn.classList.add('spinning'); dot&&dot.classList.add('loading');
+  document.getElementById('rate-chip-text').textContent='查詢中...';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:'請用web_search搜尋今天（'+new Date().toISOString().split('T')[0]+'）日圓對台幣（JPY/TWD）即時匯率，以及JPY對USD、CNY、KRW匯率。只回傳JSON，不加任何說明文字或markdown：{"jpy_twd":數字,"jpy_usd":數字,"jpy_cny":數字,"jpy_krw":數字,"change_twd":數字,"updated":"時間字串"}'}]})});
+    const data=await resp.json();
+    const text=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'';
+    const clean=text.replace(/```json|```/g,'').trim();
     let r; try{r=JSON.parse(clean);}catch{const m=clean.match(/\{[\s\S]+\}/);r=m?JSON.parse(m[0]):null;}
     if(!r) throw new Error('parse fail');
     currentRate=r.jpy_twd;
     document.getElementById('rh-big').textContent=(r.jpy_twd*100).toFixed(2);
-    const chEl=document.getElementById('rh-change');
-    const ch=r.change_twd||0;
+    const chEl=document.getElementById('rh-change'), ch=r.change_twd||0;
     if(ch!==0){chEl.textContent=(ch>=0?'+':'')+ch.toFixed(4);chEl.className='rate-hero-change '+(ch>=0?'up':'down');chEl.style.display='';}
-    document.getElementById('rh-meta').textContent=`¥1 = NT$${r.jpy_twd.toFixed(4)}　更新：${r.updated||'剛剛'}`;
-    document.getElementById('rate-chip-text').textContent=`¥100 = NT$${(r.jpy_twd*100).toFixed(1)}`;
-    dot?.classList.remove('loading');
+    document.getElementById('rh-meta').textContent='¥1 = NT$'+r.jpy_twd.toFixed(4)+'　更新：'+(r.updated||'剛剛');
+    document.getElementById('rate-chip-text').textContent='¥100 = NT$'+(r.jpy_twd*100).toFixed(1);
+    dot&&dot.classList.remove('loading');
     const tiles=document.querySelectorAll('#multi-rate-grid .rate-tile');
-    const pairs=[
-      {label:'JPY → TWD',val:r.jpy_twd?.toFixed(4),sub:'每1日圓'},
-      {label:'JPY → USD',val:r.jpy_usd?.toFixed(5)||'—',sub:'每1日圓'},
-      {label:'JPY → CNY',val:r.jpy_cny?.toFixed(4)||'—',sub:'每1日圓'},
-      {label:'JPY → KRW',val:r.jpy_krw?.toFixed(2)||'—',sub:'每1日圓'},
-    ];
-    tiles.forEach((t,i)=>{t.innerHTML=`<div class="rate-tile-label">${pairs[i].label}</div><div class="rate-tile-val">${pairs[i].val}</div><div class="rate-tile-sub">${pairs[i].sub}</div>`;});
+    [{label:'JPY → TWD',val:r.jpy_twd?.toFixed(4),sub:'每1日圓'},{label:'JPY → USD',val:r.jpy_usd?.toFixed(5)||'—',sub:'每1日圓'},{label:'JPY → CNY',val:r.jpy_cny?.toFixed(4)||'—',sub:'每1日圓'},{label:'JPY → KRW',val:r.jpy_krw?.toFixed(2)||'—',sub:'每1日圓'}]
+    .forEach((p,i)=>{tiles[i].innerHTML='<div class="rate-tile-label">'+p.label+'</div><div class="rate-tile-val">'+p.val+'</div><div class="rate-tile-sub">'+p.sub+'</div>';});
     renderExpenses();
-  } catch {
+  }catch{
     currentRate=0.217;
     document.getElementById('rh-big').textContent=(0.217*100).toFixed(2);
     document.getElementById('rh-meta').textContent='使用預設匯率 ¥1 = NT$0.2170';
     document.getElementById('rate-chip-text').textContent='¥100 ≈ NT$21.7（預設）';
-    dot?.classList.remove('loading');
+    dot&&dot.classList.remove('loading');
   }
-  btn?.classList.remove('spinning');
+  btn&&btn.classList.remove('spinning');
   updateTwdHint();
-};
-
-window.convertCurrency = function(dir) {
+}
+function convertCurrency(dir){
   const rate=currentRate||0.217;
   if(dir==='from'){const jpy=parseFloat(document.getElementById('conv-from').value)||0;document.getElementById('conv-to').value=jpy?(jpy*rate).toFixed(1):'';}
   else{const twd=parseFloat(document.getElementById('conv-to').value)||0;document.getElementById('conv-from').value=twd?Math.round(twd/rate):'';}
-};
-window.swapCurrency = function() {
+}
+function swapCurrency(){
   const a=document.getElementById('unit-from').textContent,b=document.getElementById('unit-to').textContent;
   document.getElementById('unit-from').textContent=b;document.getElementById('unit-to').textContent=a;
   const va=document.getElementById('conv-from').value;document.getElementById('conv-from').value=document.getElementById('conv-to').value;document.getElementById('conv-to').value=va;
-};
-window.setQuick = yen=>{document.getElementById('conv-from').value=yen;convertCurrency('from');};
-
-window.askAIRate = async function(btn) {
+}
+function setQuick(yen){document.getElementById('conv-from').value=yen;convertCurrency('from');}
+async function askAIRate(btn){
   const el=document.getElementById('ai-rate-text');
   el.textContent='分析中...';el.classList.add('show');btn.disabled=true;
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:`搜尋今日（${new Date().toISOString().split('T')[0]}）日圓匯率走勢，用繁體中文簡短說明：1.今日匯率概況 2.近期走勢 3.對台灣旅客換匯建議。200字以內。`}]})});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:'搜尋今日（'+new Date().toISOString().split('T')[0]+'）日圓匯率走勢，用繁體中文簡短說明：1.今日匯率概況 2.近期走勢 3.對台灣旅客換匯建議。200字以內。'}]})});
     const data=await resp.json();
     el.textContent=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'查詢失敗';
   }catch{el.textContent='查詢失敗，請稍後再試';}
   btn.disabled=false;
-};
+}
 
 // ── FRIENDS ───────────────────────────────────────────────────────────────────
-function renderFriends() {
-  document.getElementById('friends-grid').innerHTML = friends.map((f,i)=>`
-    <div class="friend-pill">
-      <div class="friend-avatar" style="background:${abg(i)};color:${afg(i)}">${f[0]}</div>
-      <span style="font-size:13px">${f}</span>
-      <span class="friend-remove" onclick="removeFriend(${i})">×</span>
-    </div>`).join('');
+function renderFriends(){
+  document.getElementById('friends-grid').innerHTML=friends.map((f,i)=>`<div class="friend-pill"><div class="friend-avatar" style="background:${abg(i)};color:${afg(i)}">${f[0]}</div><span style="font-size:13px">${f}</span><span class="friend-remove" onclick="removeFriend(${i})">×</span></div>`).join('');
 }
-window.addFriend = async function() {
-  const inp=document.getElementById('friend-input');
-  const name=inp.value.trim();
-  if(!name||friends.includes(name)||friends.length>=8)return;
-  friends.push(name); inp.value='';
-  renderFriends();
-  if(db && !localMode){
-    try{ await set(ref(db,roomPath('friends')), friends.reduce((o,f,i)=>({...o,[i]:f}),{})); }catch{}
-  }
-};
-window.removeFriend = async function(i) {
+function addFriend(){
+  const inp=document.getElementById('friend-input'), name=inp.value.trim();
+  if(!name||friends.includes(name)||friends.length>=8) return;
+  friends.push(name); inp.value=''; renderFriends();
+  if(db&&!localMode) db.ref(roomPath('friends')).set(friends.reduce((o,f,i)=>({...o,[i]:f}),{}));
+}
+function removeFriend(i){
   friends.splice(i,1); renderFriends();
-  if(db && !localMode){
-    try{ await set(ref(db,roomPath('friends')), friends.reduce((o,f,i)=>({...o,[i]:f}),{})); }catch{}
-  }
-};
-
-function renderMembers() {
-  document.getElementById('members-list').innerHTML = Object.values(members).map((m,i)=>`
-    <div class="member-chip">
-      <div class="friend-avatar" style="width:20px;height:20px;font-size:10px;background:${abg(i)};color:${afg(i)}">${(m.name||'?')[0]}</div>
-      <span style="font-size:12px">${m.name||'成員'}</span>
-      ${m.online?'<div class="member-online"></div>':''}
-    </div>`).join('') || '<span style="font-size:12px;color:#bbb">暫無成員</span>';
+  if(db&&!localMode) db.ref(roomPath('friends')).set(friends.reduce((o,f,i)=>({...o,[i]:f}),{}));
+}
+function renderMembers(){
+  document.getElementById('members-list').innerHTML=Object.values(members).map((m,i)=>`<div class="member-chip"><div class="friend-avatar" style="width:20px;height:20px;font-size:10px;background:${abg(i)};color:${afg(i)}">${(m.name||'?')[0]}</div><span style="font-size:12px">${m.name||'成員'}</span>${m.online?'<div class="member-online"></div>':''}</div>`).join('')||'<span style="font-size:12px;color:#bbb">暫無成員</span>';
 }
 
 // ── EXPENSES ──────────────────────────────────────────────────────────────────
-function formatDate(d) {
+function formatDate(d){
   const dt=new Date(d+'T00:00:00');
-  return `${dt.getMonth()+1}月${dt.getDate()}日（週${'日一二三四五六'[dt.getDay()]}）`;
+  return (dt.getMonth()+1)+'月'+dt.getDate()+'日（週'+'日一二三四五六'[dt.getDay()]+'）';
 }
-function groupByDate(arr) {
+function groupByDate(arr){
   const g={};arr.forEach(e=>{(g[e.date]||(g[e.date]=[])).push(e);});
   return Object.keys(g).sort().reverse().map(d=>({date:d,items:g[d]}));
 }
-
-function renderExpenses() {
-  const list=document.getElementById('expense-list'), empty=document.getElementById('empty-state');
+function renderExpenses(){
+  const list=document.getElementById('expense-list'),empty=document.getElementById('empty-state');
   const rate=currentRate||0.217;
   if(!expenses.length){list.innerHTML='';empty.style.display='';return;}
   empty.style.display='none';
-  list.innerHTML=groupByDate(expenses).map(g=>`
-    <div class="date-section">
-      <div class="date-label">${formatDate(g.date)}</div>
-      ${g.items.map(e=>{
-        const idx=fi(e.payer),bc=idx>=0?abg(idx):'#eee',fc=idx>=0?afg(idx):'#888';
-        const key=e._fbKey||e.id;
-        return `<div class="expense-item" id="exp-${key}" onclick="editExpense('${key}')">
-          <div class="expense-icon cat-${e.cat}">${CAT_ICONS[e.cat]||'📦'}</div>
-          <div class="expense-body">
-            <div class="expense-name">${e.name}</div>
-            <div class="expense-meta">
-              <span class="cat-badge cat-${e.cat}">${e.cat}</span>
-              ${e.payer?`<span class="payer-tag"><span class="mini-avatar" style="background:${bc};color:${fc}">${e.payer[0]}</span>${e.payer}</span>`:''}
-              ${e.note?`<span class="note-tag">📝 ${e.note}</span>`:''}
-            </div>
-          </div>
-          <div class="expense-right">
-            <div class="expense-yen">¥${e.yen.toLocaleString()}</div>
-            <div class="expense-twd">NT$${Math.round(e.yen*rate).toLocaleString()}</div>
-          </div>
-          ${e.addedBy_name&&e.addedBy!==myId?`<div class="added-by-tag">by ${e.addedBy_name}</div>`:''}
-        </div>`;
-      }).join('')}
-    </div>`).join('');
+  list.innerHTML=groupByDate(expenses).map(g=>`<div class="date-section"><div class="date-label">${formatDate(g.date)}</div>${g.items.map(e=>{const idx=fi(e.payer),bc=idx>=0?abg(idx):'#eee',fc=idx>=0?afg(idx):'#888';const key=e._fbKey||e.id;return `<div class="expense-item${e._new?' new-flash':''}" id="exp-${key}" onclick="editExpense('${key}')"><div class="expense-icon cat-${e.cat}">${CAT_ICONS[e.cat]||'📦'}</div><div class="expense-body"><div class="expense-name">${e.name}</div><div class="expense-meta"><span class="cat-badge cat-${e.cat}">${e.cat}</span>${e.payer?`<span class="payer-tag"><span class="mini-avatar" style="background:${bc};color:${fc}">${e.payer[0]}</span>${e.payer}</span>`:''} ${e.note?`<span class="note-tag">📝 ${e.note}</span>`:''}</div></div><div class="expense-right"><div class="expense-yen">¥${e.yen.toLocaleString()}</div><div class="expense-twd">NT$${Math.round(e.yen*rate).toLocaleString()}</div></div>${e.addedBy_name&&e.addedBy!==myId?`<div class="added-by-tag">by ${e.addedBy_name}</div>`:''}</div>`;}).join('')}</div>`).join('');
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
-window.openModal = function(key) {
+function openModal(key){
   editingId=key||null;
   document.getElementById('modal-title').textContent=key?'編輯費用':'新增費用';
   const today=new Date().toISOString().split('T')[0];
   if(key){
     const e=expenses.find(x=>(x._fbKey||x.id)==key);
+    if(!e){closeModal();return;}
     document.getElementById('exp-date').value=e.date;
     document.getElementById('exp-name').value=e.name;
     document.getElementById('exp-yen').value=e.yen;
-    document.getElementById('exp-note').value=e.note;
-    selectedCat=e.cat;selectedPayer=e.payer;
+    document.getElementById('exp-note').value=e.note||'';
+    selectedCat=e.cat; selectedPayer=e.payer;
   }else{
     document.getElementById('exp-date').value=today;
     document.getElementById('exp-name').value='';
@@ -891,72 +829,58 @@ window.openModal = function(key) {
     document.getElementById('exp-note').value='';
     document.getElementById('twd-hint').textContent='';
     document.getElementById('ai-box').classList.remove('show');
-    selectedCat='食';selectedPayer=friends[0]||null;
+    selectedCat='食'; selectedPayer=friends[0]||null;
   }
   document.querySelectorAll('.cat-pill').forEach(el=>el.classList.toggle('active',el.dataset.cat===selectedCat));
-  renderPayerPills();updateTwdHint();
+  renderPayerPills(); updateTwdHint();
   document.getElementById('modal-bg').classList.add('open');
   document.getElementById('fab').style.display='none';
-};
-window.closeModal = function() {
+}
+function closeModal(){
   document.getElementById('modal-bg').classList.remove('open');
   document.getElementById('fab').style.display='';
-};
-window.handleBgClick = e=>{if(e.target===document.getElementById('modal-bg'))closeModal();};
-
-function renderPayerPills() {
-  document.getElementById('payer-pills').innerHTML=friends.map((f,i)=>`
-    <div class="payer-pill ${selectedPayer===f?'active':''}" onclick="selectPayer('${f}',this)">
-      <div class="p-av" style="background:${abg(i)};color:${afg(i)}">${f[0]}</div><span>${f}</span>
-    </div>`).join('')||'<span style="font-size:13px;color:#bbb">請先新增同行友人</span>';
 }
-window.selectPayer=(name,el)=>{selectedPayer=name;document.querySelectorAll('.payer-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');};
-window.selectCat=el=>{selectedCat=el.dataset.cat;document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');};
-function updateTwdHint(){const yen=parseInt(document.getElementById('exp-yen').value)||0,rate=currentRate||0.217;document.getElementById('twd-hint').textContent=yen?`≈ NT$${Math.round(yen*rate).toLocaleString()}（¥1 = NT$${rate.toFixed(4)}）`:'';}
-window.updateTwdHint=updateTwdHint;
+function handleBgClick(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
+function renderPayerPills(){
+  document.getElementById('payer-pills').innerHTML=friends.map((f,i)=>`<div class="payer-pill ${selectedPayer===f?'active':''}" onclick="selectPayer('${f}',this)"><div class="p-av" style="background:${abg(i)};color:${afg(i)}">${f[0]}</div><span>${f}</span></div>`).join('')||'<span style="font-size:13px;color:#bbb">請先新增同行友人</span>';
+}
+function selectPayer(name,el){selectedPayer=name;document.querySelectorAll('.payer-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');}
+function selectCat(el){selectedCat=el.dataset.cat;document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');}
+function updateTwdHint(){const yen=parseInt(document.getElementById('exp-yen').value)||0,rate=currentRate||0.217;document.getElementById('twd-hint').textContent=yen?'≈ NT$'+Math.round(yen*rate).toLocaleString()+'（¥1 = NT$'+rate.toFixed(4)+'）':'';}
 
-window.saveExpense = async function() {
+async function saveExpense(){
   const date=document.getElementById('exp-date').value;
   const name=document.getElementById('exp-name').value.trim();
   const yen=parseInt(document.getElementById('exp-yen').value)||0;
   const note=document.getElementById('exp-note').value.trim();
   if(!name||!yen||!date){alert('請填寫日期、名稱和金額');return;}
-
   const expData={date,name,yen,cat:selectedCat,payer:selectedPayer||'',note,ts:Date.now(),addedBy:myId,addedBy_name:myName};
-
-  if(db && !localMode){
+  if(db&&!localMode){
     try{
-      if(editingId){
-        const e=expenses.find(x=>(x._fbKey||x.id)==editingId);
-        if(e?._fbKey) await set(ref(db,roomPath(`expenses/${e._fbKey}`)),expData);
-      }else{
-        await push(ref(db,roomPath('expenses')),expData);
-      }
-    }catch(e){
-      console.error(e);
-      // fallback to local
-      if(editingId){Object.assign(expenses.find(x=>(x._fbKey||x.id)==editingId),expData);}
-      else{expenses.push({...expData,id:genId()});}
-      renderExpenses();
-    }
+      if(editingId){const e=expenses.find(x=>(x._fbKey||x.id)==editingId);if(e?._fbKey)db.ref(roomPath('expenses/'+e._fbKey)).set(expData);}
+      else db.ref(roomPath('expenses')).push(expData);
+    }catch{expenses.push({...expData,id:genId()});renderExpenses();}
   }else{
     if(editingId){Object.assign(expenses.find(x=>(x._fbKey||x.id)==editingId),expData);}
-    else{expenses.push({...expData,id:genId()});}
+    else expenses.push({...expData,id:genId()});
     renderExpenses();
   }
   closeModal();
-};
-
-window.editExpense=key=>openModal(key);
+}
+function editExpense(key){openModal(key);}
 
 // ── PHOTO AI ──────────────────────────────────────────────────────────────────
-window.handlePhoto = async function(event) {
+async function handlePhoto(event){
   const file=event.target.files[0];if(!file)return;
   const box=document.getElementById('ai-box'),txt=document.getElementById('ai-box-text');
   box.classList.add('show');txt.textContent='AI 辨識中...';
   try{
     const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:b64}},{type:'text',text:'這是日本消費收據或商品照片。用繁體中文回覆：\n名稱：...\n金額：¥...\n類別：（食/衣/住/行/娛樂/其他之一）\n備注：...'}]}]})});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:b64}},{type:'text',text:'這是日本消費收據或商品照片（可能有日文）。請仔細辨識所有文字包括日文漢字、平假名、片假名，找出店名和金額。用繁體中文回覆以下格式：
+名稱：（店名或商品名）
+金額：¥（合計金額數字）
+類別：（食/衣/住/行/娛樂/其他之一）
+備注：（簡短補充）'}]}]})});
     const data=await resp.json();
     const text=data.content?.map(c=>c.text||'').join('')||'無法辨識';
     txt.textContent=text;
@@ -967,10 +891,99 @@ window.handlePhoto = async function(event) {
     if(catM){selectedCat=catM[1];document.querySelectorAll('.cat-pill').forEach(el=>el.classList.toggle('active',el.dataset.cat===selectedCat));}
     if(noteM)document.getElementById('exp-note').value=noteM[1].trim();
   }catch{txt.textContent='辨識失敗，請手動填寫';}
-};
+}
+
+// ── BATCH IMPORT ──────────────────────────────────────────────────────────────
+let batchResults=[];
+async function handleBatchImport(event){
+  const files=Array.from(event.target.files);
+  if(!files.length) return;
+  batchResults=[];
+  const preview=document.getElementById('batch-preview');
+  const items=document.getElementById('batch-items');
+  const footer=document.getElementById('batch-footer');
+  preview.innerHTML=''; items.innerHTML=''; footer.style.display='none';
+  files.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    preview.innerHTML+=`<div class="b-thumb" id="bth-${i}"><img src="${url}"/><div class="bt-badge bt-spin" id="bb-${i}">…</div></div>`;
+  });
+  items.innerHTML='<div style="font-size:13px;color:#888;padding:8px 0">AI 分析中，請稍候...</div>';
+  for(let i=0;i<files.length;i++){
+    const f=files[i];
+    try{
+      let exifDate='';
+      try{exifDate=await getExifDate(f);}catch{}
+      const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:b64}},{type:'text',text:'這是日本消費收據（可能含日文）。請辨識所有文字，只回覆JSON不加任何說明：{"name":"店名或品項","yen":合計金額數字,"cat":"食或衣或住或行或娛樂或其他","note":"簡短備注","date":"收據上的日期YYYY-MM-DD若有否則空字串"}'}]}]})});
+      const data=await resp.json();
+      const text=data.content?.map(c=>c.text||'').join('')||'';
+      const clean=text.replace(/```json|```/g,'').trim();
+      let parsed; try{parsed=JSON.parse(clean);}catch{const m=clean.match(/\{[\s\S]+\}/);parsed=m?JSON.parse(m[0]):null;}
+      if(parsed&&parsed.yen){
+        const dateToUse=parsed.date||exifDate||new Date().toISOString().split('T')[0];
+        batchResults[i]={ok:true,name:parsed.name||'未知商品',yen:parsed.yen,cat:parsed.cat||'其他',note:parsed.note||'',date:dateToUse,checked:true};
+        document.getElementById('bb-'+i).textContent='✓';
+        document.getElementById('bb-'+i).className='bt-badge bt-ok';
+        document.getElementById('bth-'+i).innerHTML+=`<div class="bt-info">${dateToUse.slice(5).replace('-','/')}<br>¥${Number(parsed.yen).toLocaleString()}</div>`;
+      }else{
+        batchResults[i]={ok:false};
+        document.getElementById('bb-'+i).textContent='✗';
+        document.getElementById('bb-'+i).className='bt-badge bt-err';
+      }
+    }catch{
+      batchResults[i]={ok:false};
+      document.getElementById('bb-'+i).textContent='✗';
+      document.getElementById('bb-'+i).className='bt-badge bt-err';
+    }
+    renderBatchItems();
+  }
+  footer.style.display='flex';
+  event.target.value='';
+}
+function renderBatchItems(){
+  const items=document.getElementById('batch-items');
+  const ok=batchResults.filter(r=>r&&r.ok);
+  if(!ok.length){items.innerHTML='<div style="font-size:13px;color:#bbb;padding:8px 0">無法辨識任何照片</div>';return;}
+  items.innerHTML=batchResults.map((r,i)=>{
+    if(!r||!r.ok) return '';
+    return `<div class="b-item"><input type="checkbox" class="b-item-check" id="bc-${i}" ${r.checked?'checked':''} onchange="batchResults[${i}].checked=this.checked"/><div class="b-item-body"><div class="b-item-name">${r.name}</div><div class="b-item-meta"><span>${r.date.slice(5).replace('-','/')}</span><span>¥${Number(r.yen).toLocaleString()}</span><span class="cat-badge cat-${r.cat}">${r.cat}</span>${r.note?`<span>${r.note}</span>`:''}</div></div></div>`;
+  }).join('');
+}
+function batchSelectAll(){batchResults.forEach((r,i)=>{if(r&&r.ok){r.checked=true;const cb=document.getElementById('bc-'+i);if(cb)cb.checked=true;}});}
+async function batchSaveSelected(){
+  const toSave=batchResults.filter(r=>r&&r.ok&&r.checked);
+  if(!toSave.length){alert('請先選擇要匯入的項目');return;}
+  let saved=0;
+  for(const r of toSave){
+    const expData={date:r.date,name:r.name,yen:r.yen,cat:r.cat,payer:friends[0]||'',note:r.note,ts:Date.now(),addedBy:myId,addedBy_name:myName};
+    if(db&&!localMode){try{db.ref(roomPath('expenses')).push(expData);saved++;}catch{expenses.push({...expData,id:genId()});saved++;}}
+    else{expenses.push({...expData,id:genId()});saved++;}
+  }
+  if(!db||localMode) renderExpenses();
+  showToast('已匯入 '+saved+' 筆記錄 ✓');
+  switchTab('expenses');
+  document.getElementById('batch-preview').innerHTML='';
+  document.getElementById('batch-items').innerHTML='';
+  document.getElementById('batch-footer').style.display='none';
+  batchResults=[];
+}
+async function getExifDate(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const arr=new Uint8Array(e.target.result);
+      let str='';for(let i=0;i<arr.length;i++)str+=String.fromCharCode(arr[i]);
+      const m=str.match(/(\d{4}):(\d{2}):(\d{2}) \d{2}:\d{2}:\d{2}/);
+      if(m)resolve(m[1]+'-'+m[2]+'-'+m[3]);
+      else reject('no exif');
+    };
+    reader.onerror=reject;
+    reader.readAsArrayBuffer(file.slice(0,65536));
+  });
+}
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
-function renderStats() {
+function renderStats(){
   const rate=currentRate||0.217;
   const total=expenses.reduce((s,e)=>s+e.yen,0);
   const days=[...new Set(expenses.map(e=>e.date))].length||1;
@@ -982,30 +995,10 @@ function renderStats() {
   const cats=['食','衣','住','行','娛樂','其他'];
   const ct={};cats.forEach(c=>ct[c]=0);expenses.forEach(e=>{ct[e.cat]=(ct[e.cat]||0)+e.yen;});
   const mc=Math.max(...Object.values(ct),1);
-  document.getElementById('cat-chart').innerHTML=cats.filter(c=>ct[c]>0).map(c=>`
-    <div class="bar-row">
-      <div class="bar-row-label">${c}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(ct[c]/mc*100).toFixed(1)}%;background:${CAT_COLORS[c]}"></div></div>
-      <div class="bar-amt">¥${ct[c].toLocaleString()} · NT$${Math.round(ct[c]*rate).toLocaleString()}</div>
-    </div>`).join('')||'<div style="font-size:13px;color:#bbb;padding:8px 0">暫無資料</div>';
+  document.getElementById('cat-chart').innerHTML=cats.filter(c=>ct[c]>0).map(c=>`<div class="bar-row"><div class="bar-row-label">${c}</div><div class="bar-track"><div class="bar-fill" style="width:${(ct[c]/mc*100).toFixed(1)}%;background:${CAT_COLORS[c]}"></div></div><div class="bar-amt">¥${ct[c].toLocaleString()} · NT$${Math.round(ct[c]*rate).toLocaleString()}</div></div>`).join('')||'<div style="font-size:13px;color:#bbb;padding:8px 0">暫無資料</div>';
   const pt={};expenses.forEach(e=>{if(e.payer)pt[e.payer]=(pt[e.payer]||0)+e.yen;});
   const mp=Math.max(...Object.values(pt),1);
-  document.getElementById('person-chart').innerHTML=Object.entries(pt).sort((a,b)=>b[1]-a[1]).map(([name,amt])=>{
-    const idx=fi(name),bc=idx>=0?abg(idx):'#eee',fc=idx>=0?afg(idx):'#888';
-    return `<div class="person-row">
-      <div style="display:flex;align-items:center;gap:9px">
-        <div style="width:28px;height:28px;border-radius:50%;background:${bc};color:${fc};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${name[0]}</div>
-        <div>
-          <div style="font-size:13px;font-weight:500">${name}</div>
-          <div style="height:4px;width:${Math.round(amt/mp*100)}px;background:${bc};border-radius:2px;margin-top:4px;max-width:100px"></div>
-        </div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:14px;font-weight:700">¥${amt.toLocaleString()}</div>
-        <div style="font-size:11px;color:#aaa">NT$${Math.round(amt*rate).toLocaleString()}</div>
-      </div>
-    </div>`;
-  }).join('')||'<div style="font-size:13px;color:#bbb;padding:8px 0">暫無資料</div>';
+  document.getElementById('person-chart').innerHTML=Object.entries(pt).sort((a,b)=>b[1]-a[1]).map(([name,amt])=>{const idx=fi(name),bc=idx>=0?abg(idx):'#eee',fc=idx>=0?afg(idx):'#888';return `<div class="person-row"><div style="display:flex;align-items:center;gap:9px"><div style="width:28px;height:28px;border-radius:50%;background:${bc};color:${fc};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${name[0]}</div><div><div style="font-size:13px;font-weight:500">${name}</div><div style="height:4px;width:${Math.round(amt/mp*100)}px;background:${bc};border-radius:2px;margin-top:4px;max-width:100px"></div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700">¥${amt.toLocaleString()}</div><div style="font-size:11px;color:#aaa">NT$${Math.round(amt*rate).toLocaleString()}</div></div></div>`;}).join('')||'<div style="font-size:13px;color:#bbb;padding:8px 0">暫無資料</div>';
 }
 </script>
 </body>
