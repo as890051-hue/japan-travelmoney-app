@@ -540,6 +540,21 @@ textarea { height: 65px; resize: none; }
 </div>
 
 <!-- Firebase & QR (UMD - works without type=module) -->
+<script>
+// 提前定義，讓 onclick 不會找不到
+function createRoom() {
+  var n = document.getElementById('my-name-input').value.trim() || '旅人';
+  if (window._appReady) { window._appReady.createRoom(n); }
+  else { window._pendingAction = function(){ window._appReady.createRoom(n); }; }
+}
+function joinRoom() {
+  var n = document.getElementById('my-name-input').value.trim() || '旅人';
+  var c = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if (c.length < 4) { alert('請輸入正確邀請碼'); return; }
+  if (window._appReady) { window._appReady.joinRoom(n, c); }
+  else { window._pendingAction = function(){ window._appReady.joinRoom(n, c); }; }
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -562,6 +577,12 @@ try {
   console.warn('Firebase init failed, local mode:', e);
   db = null;
 }
+// App is ready - register so onclick stubs can call real functions
+window._appReady = {
+  createRoom: function(n){ myName=n; myId=genId(); roomCode=genCode(); enterApp(false); showToast('帳本已建立 🎉'); },
+  joinRoom: function(n,c){ myName=n; myId=genId(); roomCode=c; enterApp(true); }
+};
+if(window._pendingAction){ var pa=window._pendingAction; window._pendingAction=null; pa(); }
 
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
 const AVATARS_BG = ['#B5D4F4','#9FE1CB','#F5C4B3','#F4C0D1','#CECBF6','#C0DD97','#FAC775','#F7C1C1'];
@@ -597,16 +618,14 @@ function setSyncStatus(status,text){
 }
 
 // ── ONBOARDING ────────────────────────────────────────────────────────────────
-function createRoom(){
-  myName=document.getElementById('my-name-input').value.trim()||'旅人';
+function _createRoom(name){
+  myName=name||'旅人';
   myId=genId(); roomCode=genCode();
   enterApp(false);
   showToast('帳本已建立 🎉');
 }
-function joinRoom(){
-  myName=document.getElementById('my-name-input').value.trim()||'旅人';
-  const code=document.getElementById('join-code-input').value.trim().toUpperCase();
-  if(code.length<4){alert('請輸入正確邀請碼');return;}
+function _joinRoom(name, code){
+  myName=name||'旅人';
   myId=genId(); roomCode=code;
   enterApp(true);
 }
@@ -1001,5 +1020,6 @@ function renderStats(){
   document.getElementById('person-chart').innerHTML=Object.entries(pt).sort((a,b)=>b[1]-a[1]).map(([name,amt])=>{const idx=fi(name),bc=idx>=0?abg(idx):'#eee',fc=idx>=0?afg(idx):'#888';return `<div class="person-row"><div style="display:flex;align-items:center;gap:9px"><div style="width:28px;height:28px;border-radius:50%;background:${bc};color:${fc};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${name[0]}</div><div><div style="font-size:13px;font-weight:500">${name}</div><div style="height:4px;width:${Math.round(amt/mp*100)}px;background:${bc};border-radius:2px;margin-top:4px;max-width:100px"></div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700">¥${amt.toLocaleString()}</div><div style="font-size:11px;color:#aaa">NT$${Math.round(amt*rate).toLocaleString()}</div></div></div>`;}).join('')||'<div style="font-size:13px;color:#bbb;padding:8px 0">暫無資料</div>';
 }
 </script>
+
 </body>
 </html>
